@@ -1,3 +1,4 @@
+
 #include "PixelMatrix.h"
 
 PixelMatrix::PixelMatrix(const char* filename) :PixelMatrix(){
@@ -106,13 +107,18 @@ bool PixelMatrix::makeBmpFile(const char * fileName)
 	if (!flagh) {
 		for (size_t i = (height - 1); i >= 0 && i < height; i--) {
 			for (size_t j = 0; j < width; j++) {
+				tmp = mat[i][j];
 				if (header.Info.biClrUsed) {
+					#pragma omp parallel for private(tmp)
 					for (int k = 0; k < header.Info.biClrUsed; k++) {
 						(mat[i][j] == header.Palette[k].rgbBlue) ? tmp = k : tmp;
 					}
 				}
-				tmp = mat[i][j];
-				bmpfile.write(reinterpret_cast<char*>(&tmp), 1);				
+				uint8_t bits = 0;
+				while (bits != header.Info.bcBitCount) {
+					bmpfile.write(reinterpret_cast<char*>(&tmp), 1);
+					bits += 8;
+				}
 			}
 			bmpfile.write(0, padding_size);
 		}
@@ -120,12 +126,18 @@ bool PixelMatrix::makeBmpFile(const char * fileName)
 	else {
 		for (size_t i = 0; i < height; i++) {
 			for (size_t j = 0; j < width; j++) {
+				tmp = mat[i][j];
 				if (header.Info.biClrUsed) {
+					#pragma omp parallel for private(tmp)
 					for (int k = 0; k < header.Info.biClrUsed; k++) {
-						(mat[i][j] == header.Palette[k].rgbBlue) ? tmp=k : tmp;
+						(mat[i][j] == header.Palette[k].rgbBlue) ? tmp = k : tmp;
 					}
 				}
-				tmp = mat[i][j];bmpfile.write(reinterpret_cast<char*>(&tmp), 1);
+				uint8_t bits = 0;
+				while (bits != header.Info.bcBitCount) {
+					bmpfile.write(reinterpret_cast<char*>(&tmp), 1);
+					bits += 8;
+				}
 			}
 			bmpfile.write(0, padding_size);
 		}
@@ -140,7 +152,9 @@ bool PixelMatrix::writeFile(const char *) {
 
 PixelMatrix PixelMatrix::apllyFilter(const Operator & filter, const bool d) {
 	PixelMatrix after = *this;
+#pragma omp parallel for
 	for (int i = 0; i < height; i++) {
+		#pragma omp parallel for
 		for (int j = 0; j < width; j++) {
 			if (d) {
 				auto dx = applyOperatorOnPixel(i, j, filter, Dim::X);
@@ -183,7 +197,9 @@ PixelMatrix PixelMatrix::laplacianFilter(void) {
 
 PixelMatrix PixelMatrix::medianFilter(void) {
 	PixelMatrix after = *this;
+#pragma omp parallel for
 	for (int i = 0; i < height; i++) {
+		#pragma omp parallel for
 		for (int j = 0; j < width; j++) {
 			after.mat[i][j] = calcMedianOfNeighbor(i, j);
 		}
@@ -193,15 +209,13 @@ PixelMatrix PixelMatrix::medianFilter(void) {
 
 Operator PixelMatrix::transpose(const Operator& filter) {
 	Operator f = filter;
-	f[0][0] = filter[0][0];
-	f[0][1] = filter[1][0];
-	f[0][2] = filter[2][0];
-	f[1][0] = filter[0][1];
-	f[1][1] = filter[1][1];
-	f[1][2] = filter[2][1];
-	f[2][0] = filter[0][2];
-	f[2][1] = filter[1][2];
-	f[2][2] = filter[2][2];
+#pragma omp parallel for
+	for (int i = 0; i < 3;i++) {
+#pragma omp parallel for
+		for (int j = 0; j < 3;j++) {
+			f[j][i] = filter[i][j];
+		}
+	}
 	return f;
 }
 
@@ -379,12 +393,12 @@ Pixel PixelMatrix::calcMedianOfNeighbor(const int i, const int j) {
 
 
 void PixelMatrix::makeHistgram(void) {
-	size_t grade{};
-	hist.assign((header.Info.biClrUsed?header.Info.biClrUsed:256), 0);
-	for (int i = 0; i < height; i++) {
-		for (int j = 0; j < width; j++) {
-			grade = mat[i][j];
-			hist[grade] = hist[grade]+1;
+	hist.assign((header.Info.biClrUsed ? header.Info.biClrUsed : 256), 0);
+	#pragma omp parallel for
+	for (int i = 0; i < height;i++) {
+		#pragma omp parallel for
+		for (int j = 0; j < width;j++) {
+			hist[mat[i][j]]++;
 		}
 	}
 }
@@ -409,11 +423,14 @@ std::string PixelMatrix::showHistgram(void) {
 	makeHistgram();
 	std::stringstream ss{};
 	std::string s{};
+	size_t sum=0;
 	int i = 0;
 	for(auto& n : hist) {
-		ss << i << " : " << n << "  :"<< s.assign((n*100*256)/(width*height),'*') << '\n';
+		ss << i << " : " << n << "  :"<< s.assign(n*100*128/(width*height),'*') << '\n';
 		i++;
+		sum += n;
 	}
+	ss << sum <<'\n'<< width*height;
 	return ss.str();
 }
 

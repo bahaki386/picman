@@ -4,7 +4,7 @@
 
 int main(int argc, char** argv) {
 	PixelMatrix input{};
-	auto fr=input.readBmpFile("Lenna.bmp");
+	auto fr=input.readBmpFile("test1.bmp");
 	if (!fr) return -1;
 	std::cout << input.getWidth() << "," << input.getHeight() <<"\n";
 	std::cout << input.showHistgram();
