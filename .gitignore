@@ -249,3 +249,4 @@ ModelManifest.xml
 
 #CPPCheck files
 *.cppcheck
+NotOptimized/ICmd.exe

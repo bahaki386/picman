@@ -4,13 +4,12 @@
 
 int main(int argc, char** argv) {
 	PixelMatrix input{};
-	auto fr=input.readBmpFile("test1.bmp");
+	auto fr=input.readBmpFile("Lenna.bmp");
 	if (!fr) return -1;
 	std::cout << input.getWidth() << "," << input.getHeight() <<"\n";
 	std::cout << input.showHistgram();
-	auto fw=input.prewittFilter().makeBmpFile("prewitt.bmp");
-	fw &= input.medianFilter().makeBmpFile("median.bmp");
-	fw &= input.averageFilter().makeBmpFile("average.bmp");
+	auto fw = false;
+	fw  = input.averageFilter().medianFilter().prewittFilter().makeBmpFile("median.bmp");
 	if (!fw) return -2;
 	std::cout << fr << "," << fw << "\n";
 	return 0;
