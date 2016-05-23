@@ -1,10 +1,6 @@
 
 #include "PixelMatrix.h"
 
-PixelMatrix::PixelMatrix(const char* filename) :PixelMatrix(){
-	readBmpFile(filename);
-}
-
 bool PixelMatrix::readBmpFile(const char * fileName)
 {
 	std::ifstream bmpfile{};
@@ -153,20 +149,20 @@ bool PixelMatrix::writeFile(const char *) {
 PixelMatrix PixelMatrix::apllyFilter(const Operator & filter, const bool d) {
 	PixelMatrix after = *this;
 #pragma omp parallel for
-	for (int i = 0; i < height; i++) {
+	for (int y= 0; y < height; y++) {
 		#pragma omp parallel for
-		for (int j = 0; j < width; j++) {
+		for (int x = 0; x < width; x++) {
 			if (d) {
-				auto dx = applyOperatorOnPixel(i, j, filter, Dim::X);
-				auto dy = applyOperatorOnPixel(i, j, filter, Dim::Y);
+				auto dx = applyOperatorOnPixel(x, y, filter, Dim::X);
+				auto dy = applyOperatorOnPixel(x, y, filter, Dim::Y);
 				auto tmp = static_cast<int>(sqrt(dx*dx + dy*dy));
 				tmp = tmp > 255 ? 255 : tmp;
-				after.mat[i][j] = static_cast<Pixel>(tmp);
+				after.mat[y][x] = static_cast<Pixel>(tmp);
 			}
 			else {
-				auto tmp = abs(after.applyOperatorOnPixel(i, j, filter, Dim::N));
+				auto tmp = abs(after.applyOperatorOnPixel(x, y, filter, Dim::N));
 				tmp = tmp > 255 ? 255 : tmp;
-				after.mat[i][j] = static_cast<Pixel>(tmp);
+				after.mat[y][x] = static_cast<Pixel>(tmp);
 			}
 		}
 	}
@@ -196,12 +192,12 @@ PixelMatrix PixelMatrix::laplacianFilter(void) {
 
 
 PixelMatrix PixelMatrix::medianFilter(void) {
-	PixelMatrix after = *this;
+	PixelMatrix after=*this;
 #pragma omp parallel for
-	for (int i = 0; i < height; i++) {
+	for (int y = 0; y < height; y++) {
 		#pragma omp parallel for
-		for (int j = 0; j < width; j++) {
-			after.mat[i][j] = calcMedianOfNeighbor(i, j);
+		for (int x = 0; x < width; x++) {
+			after.mat[y][x] = this->calcMedianOfNeighbor(x, y);
 		}
 	}
 	return after;
@@ -219,168 +215,168 @@ Operator PixelMatrix::transpose(const Operator& filter) {
 	return f;
 }
 
-int PixelMatrix::applyOperatorOnPixel(const int i, const int j, const Operator& filter, Dim xy) {
+int PixelMatrix::applyOperatorOnPixel(const int x, const int y, const Operator& filter, Dim xy) {
 	float ans=0;
 	auto f = filter;
 	if (xy == Dim::Y) {
 		f = transpose(filter);
 	}
-	if (i == 0) {
-		if (j == 0) {
-			ans =	mat[i][j]		* f[1][1]
-				+	mat[i][j+1]		* f[1][2] 
-				+	mat[i+1][j]		* f[2][1] 
-				+	mat[i+1][j+1]	* f[2][2];
+	if (y == 0) {
+		if (x == 0) {
+			ans =	mat[y][x]		* f[1][1]
+				+	mat[y][x+1]		* f[1][2] 
+				+	mat[y+1][x]		* f[2][1] 
+				+	mat[y+1][x+1]	* f[2][2];
 				
 		}
-		else if (j == width - 1) {
-			ans = mat[i][j]		* f[1][1]
-				+ mat[i][j-1]	* f[1][0]
-				+ mat[i+1][j]	* f[2][1]
-				+ mat[i+1][j-1]	* f[2][0];
+		else if (x == width - 1) {
+			ans = mat[y][x]		* f[1][1]
+				+ mat[y][x-1]	* f[1][0]
+				+ mat[y+1][x]	* f[2][1]
+				+ mat[y+1][x-1]	* f[2][0];
 		}
 		else {
-			ans = mat[i][j]		* f[1][1]
-				+ mat[i][j+1]	* f[1][2]
-				+ mat[i][j-1]	* f[1][0]
-				+ mat[i+1][j]	* f[2][1]
-				+ mat[i+1][j+1]	* f[2][2]
-				+ mat[i+1][j-1]	* f[2][0];
+			ans = mat[y][x]		* f[1][1]
+				+ mat[y][x+1]	* f[1][2]
+				+ mat[y][x-1]	* f[1][0]
+				+ mat[y+1][x]	* f[2][1]
+				+ mat[y+1][x+1]	* f[2][2]
+				+ mat[y+1][x-1]	* f[2][0];
 		}
 	}
-	else if (i == height - 1) {
-		if (j == 0) {
-			ans = mat[i][j]		* f[1][1]
-				+ mat[i][j+1]	* f[1][2]
-				+ mat[i-1][j]	* f[0][1]
-				+ mat[i-1][j+1]	* f[0][2];
+	else if (y == height - 1) {
+		if (x == 0) {
+			ans = mat[y][x]		* f[1][1]
+				+ mat[y][x+1]	* f[1][2]
+				+ mat[y-1][x]	* f[0][1]
+				+ mat[y-1][x+1]	* f[0][2];
 		}
-		else if (j == width - 1) {
-			ans = mat[i][j]		* f[1][1]
-				+ mat[i][j-1]	* f[1][0]
-				+ mat[i-1][j]	* f[0][1]
-				+ mat[i-1][j-1]	* f[0][0];
+		else if (x == width - 1) {
+			ans = mat[y][x]		* f[1][1]
+				+ mat[y][x-1]	* f[1][0]
+				+ mat[y-1][x]	* f[0][1]
+				+ mat[y-1][x-1]	* f[0][0];
 
 		}
 		else {
-			ans = mat[i][j]		* f[1][1]
-				+ mat[i][j+1]	* f[1][2]
-				+ mat[i][j-1]	* f[1][0]
-				+ mat[i-1][j]	* f[0][1]
-				+ mat[i-1][j+1]	* f[0][2]
-				+ mat[i-1][j-1]	* f[0][0];
+			ans = mat[y][x]		* f[1][1]
+				+ mat[y][x+1]	* f[1][2]
+				+ mat[y][x-1]	* f[1][0]
+				+ mat[y-1][x]	* f[0][1]
+				+ mat[y-1][x+1]	* f[0][2]
+				+ mat[y-1][x-1]	* f[0][0];
 
 		}
 	}
 	else {
-		if (j == 0) {
-			ans = mat[i][j]		* f[1][1]
-				+ mat[i][j+1]	* f[1][2]
-				+ mat[i+1][j]	* f[2][1]
-				+ mat[i+1][j+1]	* f[2][2]
-				+ mat[i-1][j]	* f[0][1]
-				+ mat[i-1][j+1]	* f[0][2];
+		if (x == 0) {
+			ans = mat[y][x]		* f[1][1]
+				+ mat[y][x+1]	* f[1][2]
+				+ mat[y+1][x]	* f[2][1]
+				+ mat[y+1][x+1]	* f[2][2]
+				+ mat[y-1][x]	* f[0][1]
+				+ mat[y-1][x+1]	* f[0][2];
 		}
-		else if (j == width - 1) {
-			ans = mat[i][j]		* f[1][1]
-				+ mat[i][j-1]	* f[1][0]
-				+ mat[i+1][j]	* f[2][1]
-				+ mat[i+1][j-1]	* f[2][0]
-				+ mat[i-1][j]	* f[0][1]
-				+ mat[i-1][j-1]	* f[0][0];
+		else if (x == width - 1) {
+			ans = mat[y][x]		* f[1][1]
+				+ mat[y][x-1]	* f[1][0]
+				+ mat[y+1][x]	* f[2][1]
+				+ mat[y+1][x-1]	* f[2][0]
+				+ mat[y-1][x]	* f[0][1]
+				+ mat[y-1][x-1]	* f[0][0];
 		}
 		else {
-			ans = mat[i][j]		* f[1][1]
-				+ mat[i][j+1]	* f[1][2]
-				+ mat[i][j-1]	* f[1][0]
-				+ mat[i+1][j]	* f[2][1]
-				+ mat[i+1][j+1]	* f[2][2]
-				+ mat[i+1][j-1]	* f[2][0]
-				+ mat[i-1][j]	* f[0][1]
-				+ mat[i-1][j+1]	* f[0][2]
-				+ mat[i-1][j-1]	* f[0][0];
+			ans = mat[y][x]		* f[1][1]
+				+ mat[y][x+1]	* f[1][2]
+				+ mat[y][x-1]	* f[1][0]
+				+ mat[y+1][x]	* f[2][1]
+				+ mat[y+1][x+1]	* f[2][2]
+				+ mat[y+1][x-1]	* f[2][0]
+				+ mat[y-1][x]	* f[0][1]
+				+ mat[y-1][x+1]	* f[0][2]
+				+ mat[y-1][x-1]	* f[0][0];
 		}
 	}
 	return ( static_cast<int>(ans) );
 }
 
-Pixel PixelMatrix::calcMedianOfNeighbor(const int i, const int j) {
+Pixel PixelMatrix::calcMedianOfNeighbor(const int x, const int y) {
 	std::vector<Pixel> v{};
-	if (i == 0) {
-		if (j == 0) {
-			v.push_back(mat[i][j]);
-			v.push_back(mat[i][j + 1]);
-			v.push_back(mat[i + 1][j]);
-			v.push_back(mat[i + 1][j + 1]);
+	if (y == 0) {
+		if (x == 0) {
+			v.push_back(mat[y][x]);
+			v.push_back(mat[y][x + 1]);
+			v.push_back(mat[y + 1][x]);
+			v.push_back(mat[y + 1][x + 1]);
 
 		}
-		else if (j == width - 1) {
-			v.push_back(mat[i][j - 1]);
-			v.push_back(mat[i][j]);
-			v.push_back(mat[i + 1][j - 1]);
-			v.push_back(mat[i + 1][j]);
+		else if (x == width - 1) {
+			v.push_back(mat[y][x - 1]);
+			v.push_back(mat[y][x]);
+			v.push_back(mat[y + 1][x - 1]);
+			v.push_back(mat[y + 1][x]);
 		}
 		else {
-			v.push_back(mat[i][j - 1]);
-			v.push_back(mat[i][j]);
-			v.push_back(mat[i][j + 1]);
-			v.push_back(mat[i + 1][j - 1]);
-			v.push_back(mat[i + 1][j]);
-			v.push_back(mat[i + 1][j + 1]);
+			v.push_back(mat[y][x - 1]);
+			v.push_back(mat[y][x]);
+			v.push_back(mat[y][x + 1]);
+			v.push_back(mat[y + 1][x - 1]);
+			v.push_back(mat[y + 1][x]);
+			v.push_back(mat[y + 1][x + 1]);
 		}
 	}
-	else if (i == height - 1) {
-		if (j == 0) {
-			v.push_back(mat[i - 1][j]);
-			v.push_back(mat[i - 1][j + 1]);
-			v.push_back(mat[i][j]);
-			v.push_back(mat[i][j + 1]);
+	else if (y == height - 1) {
+		if (x == 0) {
+			v.push_back(mat[y - 1][x]);
+			v.push_back(mat[y - 1][x + 1]);
+			v.push_back(mat[y][x]);
+			v.push_back(mat[y][x + 1]);
 			}
-		else if (j == width - 1) {
-			v.push_back(mat[i - 1][j - 1]);
-			v.push_back(mat[i - 1][j]);
-			v.push_back(mat[i][j - 1]);
-			v.push_back(mat[i][j]);
+		else if (x == width - 1) {
+			v.push_back(mat[y - 1][x - 1]);
+			v.push_back(mat[y - 1][x]);
+			v.push_back(mat[y][x - 1]);
+			v.push_back(mat[y][x]);
 		}
 		else {
-			v.push_back(mat[i - 1][j - 1]);
-			v.push_back(mat[i - 1][j]);
-			v.push_back(mat[i - 1][j + 1]);
-			v.push_back(mat[i][j - 1]);
-			v.push_back(mat[i][j]);
-			v.push_back(mat[i][j + 1]);
+			v.push_back(mat[y - 1][x - 1]);
+			v.push_back(mat[y - 1][x]);
+			v.push_back(mat[y - 1][x + 1]);
+			v.push_back(mat[y][x - 1]);
+			v.push_back(mat[y][x]);
+			v.push_back(mat[y][x + 1]);
 		}
 	}
 	else {
-		if (j == 0) {
-			v.push_back(mat[i - 1][j]);
-			v.push_back(mat[i - 1][j + 1]);
-			v.push_back(mat[i][j]);
-			v.push_back(mat[i][j + 1]);
-			v.push_back(mat[i + 1][j]);
-			v.push_back(mat[i + 1][j + 1]);
+		if (x == 0) {
+			v.push_back(mat[y - 1][x]);
+			v.push_back(mat[y - 1][x + 1]);
+			v.push_back(mat[y][x]);
+			v.push_back(mat[y][x + 1]);
+			v.push_back(mat[y + 1][x]);
+			v.push_back(mat[y + 1][x + 1]);
 
 		}
-		else if (j == width - 1) {
-			v.push_back(mat[i - 1][j - 1]);
-			v.push_back(mat[i - 1][j]);
-			v.push_back(mat[i][j - 1]);
-			v.push_back(mat[i][j]);
-			v.push_back(mat[i + 1][j - 1]);
-			v.push_back(mat[i + 1][j]);
+		else if (x == width - 1) {
+			v.push_back(mat[y - 1][x - 1]);
+			v.push_back(mat[y - 1][x]);
+			v.push_back(mat[y][x - 1]);
+			v.push_back(mat[y][x]);
+			v.push_back(mat[y + 1][x - 1]);
+			v.push_back(mat[y + 1][x]);
 			
 
 		}
 		else {
-			v.push_back(mat[i - 1][j - 1]);
-			v.push_back(mat[i - 1][j]);
-			v.push_back(mat[i - 1][j + 1]);
-			v.push_back(mat[i][j - 1]);
-			v.push_back(mat[i][j]);
-			v.push_back(mat[i][j + 1]);
-			v.push_back(mat[i + 1][j - 1]);
-			v.push_back(mat[i + 1][j]);
-			v.push_back(mat[i + 1][j + 1]);
+			v.push_back(mat[y - 1][x - 1]);
+			v.push_back(mat[y - 1][x]);
+			v.push_back(mat[y - 1][x + 1]);
+			v.push_back(mat[y][x - 1]);
+			v.push_back(mat[y][x]);
+			v.push_back(mat[y][x + 1]);
+			v.push_back(mat[y + 1][x - 1]);
+			v.push_back(mat[y + 1][x]);
+			v.push_back(mat[y + 1][x + 1]);
 		}
 	}
 	size_t tmp = round((double)v.size()/2);
@@ -397,8 +393,8 @@ void PixelMatrix::makeHistgram(void) {
 	#pragma omp parallel for
 	for (int i = 0; i < height;i++) {
 		#pragma omp parallel for
-		for (int j = 0; j < width;j++) {
-			hist[mat[i][j]]++;
+		for (int x = 0; x < width;x++) {
+			hist[mat[i][x]]++;
 		}
 	}
 }
