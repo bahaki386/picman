@@ -6,6 +6,7 @@ class PixelMatrix
 	std::vector<std::vector<Pixel>> mat;
 	std::vector<size_t> hist;
 	std::vector<char> header_raw;
+	BMPHEADER header;
 	int
 		width,
 		height;
@@ -30,6 +31,7 @@ public:
 	PixelMatrix sobelFilter(void);
 	PixelMatrix laplacianFilter(void);
 	PixelMatrix medianFilter(void);
+	PixelMatrix gaussianFilter(void);
 
 	inline const int getWidth(void) {
 		return width;
@@ -47,7 +49,7 @@ public:
 		posWidth = 0x12,
 		posHeight = 0x16;
 	
-	BMPHEADER header;
+	
 	///this->mat[y][x]の8-近傍にオペレータoprを適用する
 	Operator transpose(const Operator& opr);
 	

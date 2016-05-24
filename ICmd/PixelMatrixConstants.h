@@ -8,7 +8,7 @@ typedef std::vector<std::vector<float>> Operator;
 typedef uint8_t Pixel;
 
 enum class Dim { X, Y, N };
-const Operator
+static const Operator
 	averageMatrix = {
 		{1.0f / 10.0f, 1.0f / 10.0f, 1.0f / 10.0f},
 		{1.0f / 10.0f, 2.0f / 10.0f, 1.0f / 10.0f},
@@ -17,6 +17,10 @@ const Operator
 		{1, 0, -1},
 		{1, 0, -1},
 		{1, 0, -1} },
+	gaussianMatrix = {
+		{1.0f/16.0f, 2.0f/16.0f, 1.0f/16.0f},
+		{2.0f/16.0f, 4.0f/16.0f, 2.0f/16.0f},
+		{1.0f/16.0f, 2.0f/16.0f, 1.0f/16.0f} },
 	laplacianMatrix = {
 		{0,  1,	0},
 		{1, -4,	1},

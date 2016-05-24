@@ -106,8 +106,8 @@ bool PixelMatrix::makeBmpFile(const char * fileName)
 				tmp = mat[i][j];
 				if (header.Info.biClrUsed) {
 					#pragma omp parallel for private(tmp)
-					for (int k = 0; k < header.Info.biClrUsed; k++) {
-						(mat[i][j] == header.Palette[k].rgbBlue) ? tmp = k : tmp;
+					for (int k = 0; k < (int)header.Info.biClrUsed; k++) {
+						(mat[i][j] == header.Palette[k].rgbBlue) ? tmp = (uint8_t)k : tmp;
 					}
 				}
 				uint8_t bits = 0;
@@ -125,8 +125,8 @@ bool PixelMatrix::makeBmpFile(const char * fileName)
 				tmp = mat[i][j];
 				if (header.Info.biClrUsed) {
 					#pragma omp parallel for private(tmp)
-					for (int k = 0; k < header.Info.biClrUsed; k++) {
-						(mat[i][j] == header.Palette[k].rgbBlue) ? tmp = k : tmp;
+					for (int k = 0; k < (int)header.Info.biClrUsed; k++) {
+						(mat[i][j] == header.Palette[k].rgbBlue) ? tmp = (uint8_t)k : tmp;
 					}
 				}
 				uint8_t bits = 0;
@@ -147,7 +147,7 @@ bool PixelMatrix::writeFile(const char *) {
 }
 
 PixelMatrix PixelMatrix::apllyFilter(const Operator & filter, const bool d) {
-	PixelMatrix after = *this;
+	PixelMatrix tmp = *this;
 #pragma omp parallel for
 	for (int y= 0; y < height; y++) {
 		#pragma omp parallel for
@@ -155,52 +155,52 @@ PixelMatrix PixelMatrix::apllyFilter(const Operator & filter, const bool d) {
 			if (d) {
 				auto dx = applyOperatorOnPixel(x, y, filter, Dim::X);
 				auto dy = applyOperatorOnPixel(x, y, filter, Dim::Y);
-				auto tmp = static_cast<int>(sqrt(dx*dx + dy*dy));
-				tmp = tmp > 255 ? 255 : tmp;
-				after.mat[y][x] = static_cast<Pixel>(tmp);
+				auto temp = static_cast<int>(sqrt(dx*dx + dy*dy));
+				temp = temp > 255 ? 255 : temp;
+				tmp.mat[y][x] = static_cast<Pixel>(temp);
 			}
 			else {
-				auto tmp = abs(after.applyOperatorOnPixel(x, y, filter, Dim::N));
-				tmp = tmp > 255 ? 255 : tmp;
-				after.mat[y][x] = static_cast<Pixel>(tmp);
+				auto temp = abs(applyOperatorOnPixel(x, y, filter, Dim::N));
+				temp = temp > 255 ? 255 : temp;
+				tmp.mat[y][x] = static_cast<Pixel>(temp);
 			}
 		}
 	}
-	return after;
+	return tmp;
 }
 
 
 PixelMatrix PixelMatrix::averageFilter(void) {
-	auto after = apllyFilter(averageMatrix,false);
-	return after;
+	return this->apllyFilter(averageMatrix,false);
 }
 
 PixelMatrix PixelMatrix::prewittFilter(void) {
-	auto after = apllyFilter(prewittMatrix,true);
-	return after;
+	return this->apllyFilter(prewittMatrix,true);
 }
 
 PixelMatrix PixelMatrix::sobelFilter(void) {
-	auto after = apllyFilter(sobelMatrix, true);
-	return after;
+	return this->apllyFilter(sobelMatrix, true);
+	
 }
 
 PixelMatrix PixelMatrix::laplacianFilter(void) {
-	auto after = apllyFilter(laplacianMatrix, false);
-	return after;
+	return this->apllyFilter(laplacianMatrix, false);
+}
+PixelMatrix PixelMatrix::gaussianFilter(void) {
+	return this->apllyFilter(gaussianMatrix, false);
 }
 
 
 PixelMatrix PixelMatrix::medianFilter(void) {
-	PixelMatrix after=*this;
+	PixelMatrix tmp=*this;
 #pragma omp parallel for
 	for (int y = 0; y < height; y++) {
 		#pragma omp parallel for
 		for (int x = 0; x < width; x++) {
-			after.mat[y][x] = this->calcMedianOfNeighbor(x, y);
+			tmp.mat[y][x] = calcMedianOfNeighbor(x, y);
 		}
 	}
-	return after;
+	return tmp;
 }
 
 Operator PixelMatrix::transpose(const Operator& filter) {
@@ -379,7 +379,7 @@ Pixel PixelMatrix::calcMedianOfNeighbor(const int x, const int y) {
 			v.push_back(mat[y + 1][x + 1]);
 		}
 	}
-	size_t tmp = round((double)v.size()/2);
+	size_t tmp = (size_t)round((double)v.size()/2);
 	std::nth_element(v.begin(),v.begin()+tmp,v.end());
 	Pixel ans = v[tmp];
 
@@ -422,11 +422,11 @@ std::string PixelMatrix::showHistgram(void) {
 	size_t sum=0;
 	int i = 0;
 	for(auto& n : hist) {
-		ss << i << " : " << n << "  :"<< s.assign(n*100*128/(width*height),'*') << '\n';
+		ss << i <<':'<<  n <<':'<< s.assign(n*100*128/(width*height),'*') << '\n';
 		i++;
 		sum += n;
 	}
-	ss << sum <<'\n'<< width*height;
+	ss << sum <<'\n'<< width*height<<'\n';
 	return ss.str();
 }
 

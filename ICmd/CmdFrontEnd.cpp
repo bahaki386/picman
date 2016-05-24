@@ -9,7 +9,7 @@ int main(int argc, char** argv) {
 	std::cout << input.getWidth() << "," << input.getHeight() <<"\n";
 	std::cout << input.showHistgram();
 	auto fw = false;
-	fw  = input.averageFilter().medianFilter().prewittFilter().makeBmpFile("median.bmp");
+	fw  = input.averageFilter().medianFilter().gaussianFilter().laplacianFilter().makeBmpFile("gauusian.bmp");
 	if (!fw) return -2;
 	std::cout << fr << "," << fw << "\n";
 	return 0;
