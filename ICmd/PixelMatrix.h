@@ -19,11 +19,9 @@ class PixelMatrix
 public:
 	
 	bool readBmpFile(const char* fileName);
-	bool readFile(const char* fileName);
-
+	
 	bool makeBmpFile(const char* fileName);
-	bool writeFile(const char* fileName);
-
+	
 	PixelMatrix apllyFilter(const Operator& opr, const bool dim);
 
 	PixelMatrix averageFilter(void);
@@ -89,28 +87,7 @@ public:
 	///</summary>
 	void makeHistgram(void);
 
-	void parseHeader(const char* rawHeader);
-	void parseBody(const char* rawBody);
-	char* makeRawHeader(void);
-	char* makeRawBody(void);
 	
-	///<summary>
-	///data[i]‚©‚ç1byteæ‚èo‚µ‚Äint8_tŒ^‚Ì®”‚É•ÏŠ·‚·‚é
-	///</summary>
-	inline int8_t mkint8_t(const char* data, int& i) {
-		return((int8_t)data[i]);
-	}
-
-	///data[i]‚©‚ç2byteæ‚èo‚µ‚Äint16_tŒ^‚Ì®”‚É•ÏŠ·‚·‚é
-	inline int16_t mkint16_t(const char* data, int& i) {
-		return(((int16_t)data[++i]) + (((int16_t)data[i]) << 8));
-	}
-
-	///data[i]‚©‚ç4byteæ‚èo‚µ‚Äint32_tŒ^‚Ì®”‚É•ÏŠ·‚·‚é
-	inline int32_t mkint32_t(const char* data, int& i) {
-		return( ((int32_t)data[++i]) + (((int32_t)data[++i]) << 8) + (((int32_t)data[++i]) << 16) + (((int32_t)data[i]) << 24));
-	}
-
 };
 
 	

@@ -85,10 +85,6 @@ bool PixelMatrix::readBmpFile(const char * fileName)
 	return true;
 }
 
-bool PixelMatrix::readFile(const char *) {
-	return false;
-}
-
 bool PixelMatrix::makeBmpFile(const char * fileName)
 {
 	std::ofstream bmpfile{};
@@ -140,10 +136,6 @@ bool PixelMatrix::makeBmpFile(const char * fileName)
 	}
 	bmpfile.close();
 	return true;
-}
-
-bool PixelMatrix::writeFile(const char *) {
-	return false;
 }
 
 PixelMatrix PixelMatrix::apllyFilter(const Operator & filter, const bool d) {
@@ -399,21 +391,7 @@ void PixelMatrix::makeHistgram(void) {
 	}
 }
 
-void PixelMatrix::parseHeader(const char* raw_header) {
-	
-}
 
-void PixelMatrix::parseBody(const char* filename) {
-
-}
-
-char * PixelMatrix::makeRawHeader() {
-	return nullptr;
-}
-
-char * PixelMatrix::makeRawBody(void) {
-	return nullptr;
-}
 
 std::string PixelMatrix::showHistgram(void) {
 	makeHistgram();
