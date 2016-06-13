@@ -1,4 +1,8 @@
 #pragma once
+#include<fstream>
+#include<sstream>
+#include<algorithm>
+#include<numeric>
 #include"PixelMatrixConstants.h"
 
 class PixelMatrix
@@ -22,7 +26,7 @@ public:
 	
 	bool makeBmpFile(const char* fileName);
 	
-	PixelMatrix apllyFilter(const Operator& opr, const bool dim);
+	PixelMatrix apllyFilter(const Operator& opr);
 
 	PixelMatrix averageFilter(void);
 	PixelMatrix prewittFilter(void);
@@ -31,6 +35,10 @@ public:
 	PixelMatrix medianFilter(void);
 	PixelMatrix gaussianFilter(void);
 
+	PixelMatrix binalize(std::vector < std::vector<Pixel >>  threshold);
+	PixelMatrix binalize(Pixel threshold);
+	std::vector<std::vector<Pixel>>  detThreshold(void);
+	Pixel detThreshold(Pixel,Pixel);
 	inline const int getWidth(void) {
 		return width;
 	}
@@ -48,8 +56,7 @@ public:
 		posHeight = 0x16;
 	
 	
-	///this->mat[y][x]の8-近傍にオペレータoprを適用する
-	Operator transpose(const Operator& opr);
+	
 	
 	///<summary>
 	///注目画素に8-近傍オペレータを適用する
@@ -80,7 +87,7 @@ public:
 	///<param name="y">
 	///注目画素のY座標
 	///</param>
-	Pixel calcMedianOfNeighbor(const int x, const int y);
+	Pixel calcMedianOfNeighbor(const int x, const int y,const int size);
 	
 	///<summary>
 	///*thisのヒストグラムを生成しthis->histに格納する
@@ -89,5 +96,3 @@ public:
 
 	
 };
-
-	
