@@ -9,13 +9,13 @@ int main(int argc, char** argv) {
 	std::cout << input.getWidth() << "," << input.getHeight() <<"\n";
 	std::cout << input.showHistgram();
 	auto fw = true;
-	auto s=input.gaussianFilter();
-	auto p = s.prewittFilter();
-	fw &= s.makeBmpFile("s.bmp");
+	fw &= input.averageFilter().makeBmpFile("average.bmp");
+	fw &= input.medianFilter().makeBmpFile("median.bmp");
+	fw &= input.gaussianFilter().makeBmpFile("gaussian.bmp");
+	fw &= input.binalize(input.detThreshold(3)).makeBmpFile("binalize.bmp");
 	fw &= input.prewittFilter().makeBmpFile("prewitt.bmp");
 	fw &= input.sobelFilter().makeBmpFile("sobel.bmp");
 	fw &= input.laplacianFilter().makeBmpFile("lapalcian.bmp");
-	fw &= p.makeBmpFile("s-prewitt.bmp");
 	if (!fw) return -2;
 	std::cout << fr << "," << fw << "\n";
 	return 0;

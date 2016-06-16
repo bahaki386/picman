@@ -4,19 +4,21 @@
 #include<algorithm>
 #include<numeric>
 #include"PixelMatrixConstants.h"
+#include"Operator.h"
+
 
 class PixelMatrix
 {
-	std::vector<std::vector<Pixel>> mat;
-	std::vector<size_t> hist;
-	std::vector<char> header_raw;
-	BMPHEADER header;
+	std::vector<std::vector<Pixel>> mat;//画像本体の輝度行列
+	std::vector<size_t> hist;//ヒストグラム
+	std::vector<char> header_raw;//ヘッダ部バイト列
+	BMPHEADER header;//画像ヘッダ部
 	int
-		width,
-		height;
+		width,//画像の幅
+		height;//画像高さ
 	size_t
-		header_size,
-		padding_size;
+		header_size,//ヘッダ部サイズ
+		padding_size;//パディングサイズ
 	bool
 		flagh;	
 
@@ -37,7 +39,7 @@ public:
 
 	PixelMatrix binalize(std::vector < std::vector<Pixel >>  threshold);
 	PixelMatrix binalize(Pixel threshold);
-	std::vector<std::vector<Pixel>>  detThreshold(void);
+	std::vector<std::vector<Pixel>>  detThreshold(const int );
 	Pixel detThreshold(Pixel,Pixel);
 	inline const int getWidth(void) {
 		return width;

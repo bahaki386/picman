@@ -3,16 +3,19 @@
 
 bool PixelMatrix::readBmpFile(const char * fileName)
 {
-	std::ifstream bmpfile{};
-	bmpfile.exceptions(std::ios_base::failbit | std::ios_base::badbit);
-	bmpfile.open(fileName, std::ios_base::binary | std::ios_base::in);
+	using std::ifstream; 
+	using  std::ios_base;
+	using std::ios;
+	ifstream bmpfile{};
+	bmpfile.exceptions(ios_base::failbit | ios_base::badbit);
+	bmpfile.open(fileName, ios_base::binary | ios_base::in);
 	if (!bmpfile.is_open()) {
 		return false;
 	}
-	bmpfile.seekg(0,std::ios::end);
+	bmpfile.seekg(0,ios::end);
 	auto eofPos = bmpfile.tellg();
 	bmpfile.clear();
-	bmpfile.seekg(0, std::ios::beg);
+	bmpfile.seekg(0,ios::beg);
 	
 	bmpfile.read(reinterpret_cast<char*>(&(header.File.bfType)),		sizeof(header.File.bfType));
 	bmpfile.read(reinterpret_cast<char*>(&(header.File.bfSize)),		sizeof(header.File.bfSize));
@@ -44,7 +47,7 @@ bool PixelMatrix::readBmpFile(const char * fileName)
 
 	header_size = header.File.bfOffBits;
 	header_raw.resize(header_size);
-	bmpfile.seekg(0, std::ios_base::beg);
+	bmpfile.seekg(0,ios_base::beg);
 	bmpfile.read(&(header_raw[0]), header_size);
 	
 	height = header.Info.bcHeight;
@@ -87,9 +90,12 @@ bool PixelMatrix::readBmpFile(const char * fileName)
 
 bool PixelMatrix::makeBmpFile(const char * fileName)
 {
-	std::ofstream bmpfile{};
-	bmpfile.exceptions(std::ofstream::failbit | std::ofstream::badbit);
-	bmpfile.open(fileName, std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
+	using std::ofstream;
+	using std::ios_base;
+	using std::ios;
+	ofstream bmpfile{};
+	bmpfile.exceptions(ofstream::failbit | ofstream::badbit);
+	bmpfile.open(fileName, ios_base::binary | ios_base::out | ios_base::trunc);
 	if (!bmpfile.is_open()) {
 		return false;
 	}
@@ -200,21 +206,21 @@ PixelMatrix PixelMatrix::binalize(Pixel threshold)
 	return tmp;
 }
 
-std::vector<std::vector<Pixel>> PixelMatrix::detThreshold()
+std::vector<std::vector<Pixel>> PixelMatrix::detThreshold(const int size)
 {
 	auto out{mat};
 	auto avg = averageFilter().mat;
 	Pixel th_p = 0;
-	int size = 3;
+	
 	for (int y = 0; y < height; y++) {
 		for (int x = 0; x < width; x++) {
 			int ans{};
 			Pixel f = avg[y][x];
-			for (int i = -size; i <= size; i++) {
-				for (int j = -size; j <= size; j++) {
+			for (int i = -size/2; i <= size/2; i++) {
+				for (int j = -size/2; j <= size/2; j++) {
 					auto cx = x + j, cy = y + i;
 					if (cx >= 0 && cx < width && cy >= 0 && cy < height) {
-						ans += pow(mat[cy][cx] - f, 2);
+						ans += ((mat[cy][cx] - f)*(mat[cy][cx] - f));
 					}
 				}
 			}

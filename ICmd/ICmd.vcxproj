@@ -140,6 +140,7 @@
     <ClCompile Include="PixelMatrix.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Operator.h" />
     <ClInclude Include="PixelMatrix.h" />
     <ClInclude Include="PixelMatrixConstants.h" />
   </ItemGroup>

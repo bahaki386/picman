@@ -1,53 +1,9 @@
 #pragma once
 #include<vector>
 #include<cstdint>
-typedef std::vector<std::vector<std::vector<double>>> Operator;
-typedef uint8_t Pixel;
+using Pixel = uint8_t;
 
 enum class Dim { X, Y, N };
-static const Operator
-averageMatrix = {
-	{
-	{1.0 / 10.0, 1.0 / 10.0, 1.0f / 10.0},
-	{1.0 / 10.0, 2.0 / 10.0, 1.0f / 10.0},
-	{1.0 / 10.0, 1.0 / 10.0, 1.0f / 10.0}
-	} 
-},
-	prewittMatrix = {
-		{
-		{1, 0, -1},
-		{1, 0, -1},
-		{1, 0, -1} 
-		},
-		{ 
-		{1, 1, 1},
-		{0, 0, 0},
-		{-1, -1, -1} 
-		} 
-},
-		gaussianMatrix = { 
-			{	
-			{1.0f / 16.0f, 2.0f / 16.0f, 1.0f / 16.0f},
-			{2.0f / 16.0f, 4.0f / 16.0f, 2.0f / 16.0f},
-			{1.0f / 16.0f, 2.0f / 16.0f, 1.0f / 16.0f}
-			}
-},
-laplacianMatrix = { {
-	{1,  1,	1},
-	{1, -8,	1},
-	{1,  1,	1} } },
-	sobelMatrix = { 
-		{
-		{1, 0, -1},
-		{2, 0, -2},
-		{1, 0, -1} 
-		}, 
-		{
-	{1, 2, 1},
-		{0, 0, 0},
-		{-1, -2, -1}
-}
-};
 struct RGBQUAD
 {
 	uint8_t	rgbBlue;
