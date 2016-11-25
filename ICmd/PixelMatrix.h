@@ -4,7 +4,7 @@
 #include<algorithm>
 #include<numeric>
 #include"PixelMatrixConstants.h"
-#include"Operator.h"
+
 
 
 ///<summary>
