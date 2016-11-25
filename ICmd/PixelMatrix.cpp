@@ -3,16 +3,19 @@
 
 bool PixelMatrix::readBmpFile(const char * fileName)
 {
-	std::ifstream bmpfile{};
-	bmpfile.exceptions(std::ios_base::failbit | std::ios_base::badbit);
-	bmpfile.open(fileName, std::ios_base::binary | std::ios_base::in);
+	using std::ifstream; 
+	using std::ios_base;
+	using std::ios;
+	ifstream bmpfile{};
+	bmpfile.exceptions(ios_base::failbit | ios_base::badbit);
+	bmpfile.open(fileName, ios_base::binary | ios_base::in);
 	if (!bmpfile.is_open()) {
 		return false;
 	}
-	bmpfile.seekg(0,std::ios::end);
+	bmpfile.seekg(0,ios::end);
 	auto eofPos = bmpfile.tellg();
 	bmpfile.clear();
-	bmpfile.seekg(0, std::ios::beg);
+	bmpfile.seekg(0,ios::beg);
 	
 	bmpfile.read(reinterpret_cast<char*>(&(header.File.bfType)),		sizeof(header.File.bfType));
 	bmpfile.read(reinterpret_cast<char*>(&(header.File.bfSize)),		sizeof(header.File.bfSize));
@@ -44,7 +47,7 @@ bool PixelMatrix::readBmpFile(const char * fileName)
 
 	header_size = header.File.bfOffBits;
 	header_raw.resize(header_size);
-	bmpfile.seekg(0, std::ios_base::beg);
+	bmpfile.seekg(0,ios_base::beg);
 	bmpfile.read(&(header_raw[0]), header_size);
 	
 	height = header.Info.bcHeight;
@@ -65,7 +68,7 @@ bool PixelMatrix::readBmpFile(const char * fileName)
 		for (size_t i = (height - 1); i >= 0 && i < height; i--) {
 			for (size_t j = 0; j < width; j++) {
 				bmpfile.read(reinterpret_cast<char*>(&tmp), 1);
-				mat[i][j] = header.Info.biClrUsed?header.Palette[tmp].rgbBlue:tmp;
+				mat[i][j] = header.Info.biClrUsed ? header.Palette[tmp].rgbBlue : tmp;
 				bmpfile.ignore((header.Info.bcBitCount/8) - 1);
 			}
 			bmpfile.ignore(padding_size);
@@ -75,7 +78,7 @@ bool PixelMatrix::readBmpFile(const char * fileName)
 		for (size_t i = 0; i < height; i++) {
 			for (size_t j = 0; j < width; j++) {
 				bmpfile.read(reinterpret_cast<char*>(&tmp), 1);
-				mat[i][j] = header.Info.biClrUsed?header.Palette[tmp].rgbBlue:tmp;
+				mat[i][j] = header.Info.biClrUsed ? header.Palette[tmp].rgbBlue : tmp;
 				bmpfile.ignore(2);
 			}
 			bmpfile.ignore(padding_size);
@@ -85,15 +88,14 @@ bool PixelMatrix::readBmpFile(const char * fileName)
 	return true;
 }
 
-bool PixelMatrix::readFile(const char *) {
-	return false;
-}
-
 bool PixelMatrix::makeBmpFile(const char * fileName)
 {
-	std::ofstream bmpfile{};
-	bmpfile.exceptions(std::ofstream::failbit | std::ofstream::badbit);
-	bmpfile.open(fileName, std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
+	using std::ofstream;
+	using std::ios_base;
+	using std::ios;
+	ofstream bmpfile{};
+	bmpfile.exceptions(ofstream::failbit | ofstream::badbit);
+	bmpfile.open(fileName, ios_base::binary | ios_base::out | ios_base::trunc);
 	if (!bmpfile.is_open()) {
 		return false;
 	}
@@ -105,9 +107,8 @@ bool PixelMatrix::makeBmpFile(const char * fileName)
 			for (size_t j = 0; j < width; j++) {
 				tmp = mat[i][j];
 				if (header.Info.biClrUsed) {
-					#pragma omp parallel for private(tmp)
-					for (int k = 0; k < header.Info.biClrUsed; k++) {
-						(mat[i][j] == header.Palette[k].rgbBlue) ? tmp = k : tmp;
+					for (int k = 0; k < (int)header.Info.biClrUsed; k++) {
+						(mat[i][j] == header.Palette[k].rgbBlue) ? tmp = (uint8_t)k : tmp;
 					}
 				}
 				uint8_t bits = 0;
@@ -124,9 +125,8 @@ bool PixelMatrix::makeBmpFile(const char * fileName)
 			for (size_t j = 0; j < width; j++) {
 				tmp = mat[i][j];
 				if (header.Info.biClrUsed) {
-					#pragma omp parallel for private(tmp)
-					for (int k = 0; k < header.Info.biClrUsed; k++) {
-						(mat[i][j] == header.Palette[k].rgbBlue) ? tmp = k : tmp;
+					for (int k = 0; k < (int)header.Info.biClrUsed; k++) {
+						(mat[i][j] == header.Palette[k].rgbBlue) ? tmp = (uint8_t)k : tmp;
 					}
 				}
 				uint8_t bits = 0;
@@ -142,246 +142,169 @@ bool PixelMatrix::makeBmpFile(const char * fileName)
 	return true;
 }
 
-bool PixelMatrix::writeFile(const char *) {
-	return false;
-}
+/**
+ *	TODO:ˆÈ~‚É’è‹`‚·‚éŠÖ”‚ÍOpenMP‚É‚æ‚é•À—ñ‰»‚Ì‘ÎÛ‚Æ‚È‚è‚¤‚é
+ */
 
-PixelMatrix PixelMatrix::apllyFilter(const Operator & filter, const bool d) {
-	PixelMatrix after = *this;
+PixelMatrix PixelMatrix::apllyFilter(const Operator & filter) {
+	PixelMatrix tmp = *this;
 #pragma omp parallel for
 	for (int y= 0; y < height; y++) {
-		#pragma omp parallel for
+#pragma omp parallel for
 		for (int x = 0; x < width; x++) {
-			if (d) {
+			if (filter.size()==2) {
 				auto dx = applyOperatorOnPixel(x, y, filter, Dim::X);
 				auto dy = applyOperatorOnPixel(x, y, filter, Dim::Y);
-				auto tmp = static_cast<int>(sqrt(dx*dx + dy*dy));
-				tmp = tmp > 255 ? 255 : tmp;
-				after.mat[y][x] = static_cast<Pixel>(tmp);
+				auto temp =abs(dx)+abs(dy);
+				temp = temp > 255 ? 255 : temp;
+				tmp.mat[y][x] = static_cast<Pixel>(temp);
 			}
 			else {
-				auto tmp = abs(after.applyOperatorOnPixel(x, y, filter, Dim::N));
-				tmp = tmp > 255 ? 255 : tmp;
-				after.mat[y][x] = static_cast<Pixel>(tmp);
+				auto temp = abs(applyOperatorOnPixel(x, y, filter, Dim::N));
+				temp = temp > 255 ? 255 : temp;
+				tmp.mat[y][x] = static_cast<Pixel>(temp);
 			}
 		}
 	}
-	return after;
+	return tmp;
 }
 
 
 PixelMatrix PixelMatrix::averageFilter(void) {
-	auto after = apllyFilter(averageMatrix,false);
-	return after;
+	return this->apllyFilter(averageMatrix);
 }
 
 PixelMatrix PixelMatrix::prewittFilter(void) {
-	auto after = apllyFilter(prewittMatrix,true);
-	return after;
+	return this->apllyFilter(prewittMatrix);
 }
 
 PixelMatrix PixelMatrix::sobelFilter(void) {
-	auto after = apllyFilter(sobelMatrix, true);
-	return after;
+	return this->apllyFilter(sobelMatrix);
+	
 }
 
 PixelMatrix PixelMatrix::laplacianFilter(void) {
-	auto after = apllyFilter(laplacianMatrix, false);
-	return after;
+	return this->apllyFilter(laplacianMatrix);
+}
+PixelMatrix PixelMatrix::gaussianFilter(void) {
+	return this->apllyFilter(gaussianMatrix);
 }
 
+PixelMatrix PixelMatrix::binalize(std::vector<std::vector<Pixel>> threshold)
+{
+	auto tmp = *this;
+#pragma omp parallel for
+	for (int i = 0; i < height; i++) {
+#pragma omp parallel for
+		for (int j = 0; j < width; j++) {
+			tmp.mat[i][j] = ((this->mat[i][j] > threshold[i][j])?255:0);
+		}
+	}
+	return tmp;
+}
 
-PixelMatrix PixelMatrix::medianFilter(void) {
-	PixelMatrix after=*this;
+PixelMatrix PixelMatrix::binalize(Pixel threshold)
+{
+	auto tmp = *this;
+#pragma omp parallel for
+	for (int i = 0; i < height; i++) {
+#pragma omp parallel for
+		for (int j = 0; j < width; j++) {
+			tmp.mat[i][j] = ((this->mat[i][j] > threshold) ? 255 : 0);
+		}
+	}
+	return tmp;
+}
+
+std::vector<std::vector<Pixel>> PixelMatrix::detThreshold(const int size)
+{
+	auto out{mat};
+	auto avg = averageFilter().mat;
+	Pixel th_p = 0;
 #pragma omp parallel for
 	for (int y = 0; y < height; y++) {
 		#pragma omp parallel for
 		for (int x = 0; x < width; x++) {
-			after.mat[y][x] = this->calcMedianOfNeighbor(x, y);
+			int ans{};
+			Pixel f = avg[y][x];
+#pragma omp parallel for
+			for (int i = -size/2; i <= size/2; i++) {
+#pragma omp parallel for
+				for (int j = -size/2; j <= size/2; j++) {
+					auto cx = x + j, cy = y + i;
+					if (cx >= 0 && cx < width && cy >= 0 && cy < height) {
+						ans += ((mat[cy][cx] - f)*(mat[cy][cx] - f));
+					}
+				}
+			}
+			if (ans < (400 * size * size)) {
+				out[y][x] = th_p;
+			}
+			else {
+				out[y][x] = f;
+			}
+			th_p = out[y][x];
 		}
 	}
-	return after;
+	return out;
+}
+Pixel PixelMatrix::detThreshold(Pixel min,Pixel max) {
+	makeHistgram();
+	Pixel ans{};
+	ans = Pixel(min_element(hist.begin() + min, hist.begin() + max) - hist.begin());
+	return ans;
 }
 
-Operator PixelMatrix::transpose(const Operator& filter) {
-	Operator f = filter;
+
+
+PixelMatrix PixelMatrix::medianFilter(void) {
+	PixelMatrix tmp=*this;
 #pragma omp parallel for
-	for (int i = 0; i < 3;i++) {
+	for (int y = 0; y < height; y++) {
 #pragma omp parallel for
-		for (int j = 0; j < 3;j++) {
-			f[j][i] = filter[i][j];
+		for (int x = 0; x < width; x++) {
+			tmp.mat[y][x] = calcMedianOfNeighbor(x, y,3);
 		}
 	}
-	return f;
+	return tmp;
 }
+
+
 
 int PixelMatrix::applyOperatorOnPixel(const int x, const int y, const Operator& filter, Dim xy) {
-	float ans=0;
-	auto f = filter;
+	double ans=0;
+	auto f=filter[0];
 	if (xy == Dim::Y) {
-		f = transpose(filter);
+		f = filter[1];
 	}
-	if (y == 0) {
-		if (x == 0) {
-			ans =	mat[y][x]		* f[1][1]
-				+	mat[y][x+1]		* f[1][2] 
-				+	mat[y+1][x]		* f[2][1] 
-				+	mat[y+1][x+1]	* f[2][2];
-				
-		}
-		else if (x == width - 1) {
-			ans = mat[y][x]		* f[1][1]
-				+ mat[y][x-1]	* f[1][0]
-				+ mat[y+1][x]	* f[2][1]
-				+ mat[y+1][x-1]	* f[2][0];
-		}
-		else {
-			ans = mat[y][x]		* f[1][1]
-				+ mat[y][x+1]	* f[1][2]
-				+ mat[y][x-1]	* f[1][0]
-				+ mat[y+1][x]	* f[2][1]
-				+ mat[y+1][x+1]	* f[2][2]
-				+ mat[y+1][x-1]	* f[2][0];
-		}
-	}
-	else if (y == height - 1) {
-		if (x == 0) {
-			ans = mat[y][x]		* f[1][1]
-				+ mat[y][x+1]	* f[1][2]
-				+ mat[y-1][x]	* f[0][1]
-				+ mat[y-1][x+1]	* f[0][2];
-		}
-		else if (x == width - 1) {
-			ans = mat[y][x]		* f[1][1]
-				+ mat[y][x-1]	* f[1][0]
-				+ mat[y-1][x]	* f[0][1]
-				+ mat[y-1][x-1]	* f[0][0];
-
-		}
-		else {
-			ans = mat[y][x]		* f[1][1]
-				+ mat[y][x+1]	* f[1][2]
-				+ mat[y][x-1]	* f[1][0]
-				+ mat[y-1][x]	* f[0][1]
-				+ mat[y-1][x+1]	* f[0][2]
-				+ mat[y-1][x-1]	* f[0][0];
-
-		}
-	}
-	else {
-		if (x == 0) {
-			ans = mat[y][x]		* f[1][1]
-				+ mat[y][x+1]	* f[1][2]
-				+ mat[y+1][x]	* f[2][1]
-				+ mat[y+1][x+1]	* f[2][2]
-				+ mat[y-1][x]	* f[0][1]
-				+ mat[y-1][x+1]	* f[0][2];
-		}
-		else if (x == width - 1) {
-			ans = mat[y][x]		* f[1][1]
-				+ mat[y][x-1]	* f[1][0]
-				+ mat[y+1][x]	* f[2][1]
-				+ mat[y+1][x-1]	* f[2][0]
-				+ mat[y-1][x]	* f[0][1]
-				+ mat[y-1][x-1]	* f[0][0];
-		}
-		else {
-			ans = mat[y][x]		* f[1][1]
-				+ mat[y][x+1]	* f[1][2]
-				+ mat[y][x-1]	* f[1][0]
-				+ mat[y+1][x]	* f[2][1]
-				+ mat[y+1][x+1]	* f[2][2]
-				+ mat[y+1][x-1]	* f[2][0]
-				+ mat[y-1][x]	* f[0][1]
-				+ mat[y-1][x+1]	* f[0][2]
-				+ mat[y-1][x-1]	* f[0][0];
+	auto s = static_cast<int>(f.size() / 2);
+#pragma omp parallel for
+	for (int i = -s; i <= s; i++) {
+#pragma omp parallel for
+		for (int j = -s; j <= s; j++) {
+			auto cx = x + j, cy = y + i;
+			if (cx>=0 && cx<width && cy>=0 && cy<height) {
+				ans += (mat[cy][cx] * f[i + s][j + s]);
+			}
 		}
 	}
 	return ( static_cast<int>(ans) );
 }
 
-Pixel PixelMatrix::calcMedianOfNeighbor(const int x, const int y) {
+Pixel PixelMatrix::calcMedianOfNeighbor(const int x, const int y,const int size) {
 	std::vector<Pixel> v{};
-	if (y == 0) {
-		if (x == 0) {
-			v.push_back(mat[y][x]);
-			v.push_back(mat[y][x + 1]);
-			v.push_back(mat[y + 1][x]);
-			v.push_back(mat[y + 1][x + 1]);
-
-		}
-		else if (x == width - 1) {
-			v.push_back(mat[y][x - 1]);
-			v.push_back(mat[y][x]);
-			v.push_back(mat[y + 1][x - 1]);
-			v.push_back(mat[y + 1][x]);
-		}
-		else {
-			v.push_back(mat[y][x - 1]);
-			v.push_back(mat[y][x]);
-			v.push_back(mat[y][x + 1]);
-			v.push_back(mat[y + 1][x - 1]);
-			v.push_back(mat[y + 1][x]);
-			v.push_back(mat[y + 1][x + 1]);
-		}
-	}
-	else if (y == height - 1) {
-		if (x == 0) {
-			v.push_back(mat[y - 1][x]);
-			v.push_back(mat[y - 1][x + 1]);
-			v.push_back(mat[y][x]);
-			v.push_back(mat[y][x + 1]);
+#pragma omp parallel for
+	for (int i = -size/2; i <= size/2; i++) {
+		#pragma omp parallel for
+		for (int j = -size/2; j <= size/2; j++) {
+			auto cx = x + j, cy = y + i;
+			if (cx >= 0 && cx < width && cy >= 0 && cy < height) {
+				v.push_back(mat[cy][cx]);
 			}
-		else if (x == width - 1) {
-			v.push_back(mat[y - 1][x - 1]);
-			v.push_back(mat[y - 1][x]);
-			v.push_back(mat[y][x - 1]);
-			v.push_back(mat[y][x]);
 		}
-		else {
-			v.push_back(mat[y - 1][x - 1]);
-			v.push_back(mat[y - 1][x]);
-			v.push_back(mat[y - 1][x + 1]);
-			v.push_back(mat[y][x - 1]);
-			v.push_back(mat[y][x]);
-			v.push_back(mat[y][x + 1]);
-		}
-	}
-	else {
-		if (x == 0) {
-			v.push_back(mat[y - 1][x]);
-			v.push_back(mat[y - 1][x + 1]);
-			v.push_back(mat[y][x]);
-			v.push_back(mat[y][x + 1]);
-			v.push_back(mat[y + 1][x]);
-			v.push_back(mat[y + 1][x + 1]);
-
-		}
-		else if (x == width - 1) {
-			v.push_back(mat[y - 1][x - 1]);
-			v.push_back(mat[y - 1][x]);
-			v.push_back(mat[y][x - 1]);
-			v.push_back(mat[y][x]);
-			v.push_back(mat[y + 1][x - 1]);
-			v.push_back(mat[y + 1][x]);
-			
-
-		}
-		else {
-			v.push_back(mat[y - 1][x - 1]);
-			v.push_back(mat[y - 1][x]);
-			v.push_back(mat[y - 1][x + 1]);
-			v.push_back(mat[y][x - 1]);
-			v.push_back(mat[y][x]);
-			v.push_back(mat[y][x + 1]);
-			v.push_back(mat[y + 1][x - 1]);
-			v.push_back(mat[y + 1][x]);
-			v.push_back(mat[y + 1][x + 1]);
-		}
-	}
-	size_t tmp = round((double)v.size()/2);
+	}	size_t tmp = (v.size() / 2) + 1;
 	std::nth_element(v.begin(),v.begin()+tmp,v.end());
-	Pixel ans = v[tmp];
+	Pixel ans = (Pixel)v[tmp];
 
 	return ans;
 }
@@ -390,43 +313,27 @@ Pixel PixelMatrix::calcMedianOfNeighbor(const int x, const int y) {
 
 void PixelMatrix::makeHistgram(void) {
 	hist.assign((header.Info.biClrUsed ? header.Info.biClrUsed : 256), 0);
-	#pragma omp parallel for
-	for (int i = 0; i < height;i++) {
-		#pragma omp parallel for
+#pragma omp parallel for
+	for (int y = 0; y < height;y++) {
+#pragma omp parallel for
 		for (int x = 0; x < width;x++) {
-			hist[mat[i][x]]++;
+			hist[mat[y][x]]++;
 		}
 	}
 }
 
-void PixelMatrix::parseHeader(const char* raw_header) {
-	
-}
 
-void PixelMatrix::parseBody(const char* filename) {
-
-}
-
-char * PixelMatrix::makeRawHeader() {
-	return nullptr;
-}
-
-char * PixelMatrix::makeRawBody(void) {
-	return nullptr;
-}
 
 std::string PixelMatrix::showHistgram(void) {
 	makeHistgram();
 	std::stringstream ss{};
 	std::string s{};
-	size_t sum=0;
-	int i = 0;
+	int i{};
 	for(auto& n : hist) {
-		ss << i << " : " << n << "  :"<< s.assign(n*100*128/(width*height),'*') << '\n';
 		i++;
-		sum += n;
+		ss << i <<"\t"<< n << '\n';
 	}
-	ss << sum <<'\n'<< width*height;
+	ss << std::accumulate(hist.begin(),hist.end(),(size_t)0) <<'\n'<< (size_t)width*(size_t)height<<'\n';
 	return ss.str();
 }
 
