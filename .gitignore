@@ -249,3 +249,6 @@ ModelManifest.xml
 
 #CPPCheck files
 *.cppcheck
+ICmd/PixelMatrix.cpp.rej
+ICmd/PixelMatrix.h.rej
+NotOptimized/ICmd.exe
