@@ -1,4 +1,5 @@
-#include<vector>
+#pragma once
+#include "stdafx.h"
 
 using Operator = std::vector<std::vector<std::vector<double>>>;
 static const Operator
