@@ -1,13 +1,16 @@
-#include "PixelMatrix.h"
+// console1.cpp : コンソール アプリケーションのエントリ ポイントを定義します。
+//
+
+#include "stdafx.h"
 #include <iostream>
 
 
 int main(int argc, char** argv) {
 	PixelMatrix input{};
-	auto fr=input.readBmpFile("Text.bmp");
+	auto fr = input.readBmpFile("Text.bmp");
 	if (!fr) return -1;
 	auto fh = std::ofstream("hist.txt");
-	std::cout << input.getWidth() << "," << input.getHeight() <<"\n";
+	std::cout << input.getWidth() << "," << input.getHeight() << "\n";
 	std::cout << input.showHistgram();
 	fh << input.showHistgram();
 	auto fw = true;
