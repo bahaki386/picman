@@ -1,7 +1,7 @@
 #pragma once
 #include "stdafx.h"
 template<typename T>
-class Mat2d
+class PIXELMATRIXDLL_API Mat2d
 {
 private:
 	size_t xsize, ysize;
@@ -15,6 +15,7 @@ public:
 	T& at(size_t x,size_t y);
 	size_t size(void);
 };
+#ifdef PIXELMATRIXDLL
 template<typename T>
 Mat2d<T>::Mat2d(size_t x, size_t y) :xsize(x), ysize(y), mat(xsize*ysize) {}
 
@@ -49,7 +50,7 @@ size_t Mat2d<T>::size(void)
 {
 	return xsize;
 }
-
+#endif
 
 
 

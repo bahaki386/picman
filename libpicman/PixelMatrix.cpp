@@ -228,7 +228,9 @@ Mat2d<Pixel> PixelMatrix::detThreshold(const int size) {
 				for (int j = -size / 2; j <= size / 2; j++) {
 					auto cx = x + j, cy = y + i;
 					if (cx >= 0 && cx < width && cy >= 0 && cy < height) {
-						ans += ((mat.at(cx,cy) - f)*(mat.at(cx,cy) - f));
+						auto temp= ((mat.at(cx, cy) - f)*(mat.at(cx, cy) - f));
+#pragma omp atomic
+						ans += temp;
 					}
 				}
 			}
@@ -267,7 +269,7 @@ PixelMatrix PixelMatrix::medianFilter(void) {
 
 
 int PixelMatrix::applyOperatorOnPixel(const int x, const int y, const Operator& filter, Dim xy) {
-	double ans = 0;
+	double ans = 0.0;
 	auto f = filter[0];
 	if (xy == Dim::Y) {
 		f = filter[1];
@@ -279,7 +281,9 @@ int PixelMatrix::applyOperatorOnPixel(const int x, const int y, const Operator& 
 		for (int j = -s; j <= s; j++) {
 			auto cx = x + j, cy = y + i;
 			if (cx >= 0 && cx < width && cy >= 0 && cy < height) {
-				ans += (mat.at(cx,cy) * f.at(j + s,i + s));
+				auto tmp = (mat.at(cx,cy) * f.at(j + s,i + s));
+#pragma omp atomic
+				ans += tmp;
 			}
 		}
 	}
@@ -312,7 +316,9 @@ void PixelMatrix::makeHistgram(void) {
 	for (int y = 0; y < height; y++) {
 #pragma omp parallel for
 		for (int x = 0; x < width; x++) {
-			hist[mat.at(x,y)]++;
+#pragma omp critical (hUpdate)
+			hist[mat.at(x, y)]++;
+			
 		}
 	}
 }
@@ -322,7 +328,6 @@ void PixelMatrix::makeHistgram(void) {
 std::string PixelMatrix::showHistgram(void) {
 	makeHistgram();
 	std::stringstream ss{};
-	std::string s{};
 	int i{};
 	for (auto& n : hist) {
 		i++;
